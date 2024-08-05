@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Form, redirect, useActionData, useNavigation } from "react-router-dom";
 import { createOrder } from "../../services/apiRestaurant";
+import Button from "../../ui/Button";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
   /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/.test(
-    str
+    str,
   );
 
 const fakeCart = [
@@ -64,13 +65,13 @@ function CreateOrder() {
       <Form method="POST" action="/order/new">
         <div>
           <label>First Name</label>
-          <input type="text" name="customer" required />
+          <input className="input" type="text" name="customer" required />
         </div>
 
         <div>
           <label>Phone number</label>
           <div>
-            <input type="tel" name="phone" required />
+            <input className="input" type="tel" name="phone" required />
             {/* check if there is any error from useActionData */}
             {formErrors?.phone && formErrors.phone}
           </div>
@@ -79,7 +80,7 @@ function CreateOrder() {
         <div>
           <label>Address</label>
           <div>
-            <input type="text" name="address" required />
+            <input className="input" type="text" name="address" required />
           </div>
         </div>
 
@@ -88,6 +89,7 @@ function CreateOrder() {
             type="checkbox"
             name="priority"
             id="priority"
+            className="h-6 w-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
             // value={withPriority}
             // onChange={(e) => setWithPriority(e.target.checked)}
           />
@@ -100,9 +102,9 @@ function CreateOrder() {
           {/* just if you want to pas an object to need to transform to string it */}
           {/* this way then form will be submitted this data will be also shows in the data but used doesn't see it */}
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <button disabled={isSubmitting}>
+          <Button disabled={isSubmitting}>
             {isSubmitting ? "submitting..." : "Order now"}
-          </button>
+          </Button>
         </div>
       </Form>
     </div>
@@ -144,6 +146,7 @@ export async function action({ request }) {
   // inside the component you can get access to the data returned from this action function
   // in this case it's object of errors
   // this data can be read with useLoaderData hook and create some UI output for user
+
   const newOrder = await createOrder(order);
 
   // now you can redirect user to new order Route
@@ -151,6 +154,7 @@ export async function action({ request }) {
   // so you can use 'redirect'
   // 'redirect' function will create a new response and it works with web API
   // so if you return a new response from this function the browser will follow that response
+
   return redirect(`/order/${newOrder.id}`);
 }
 
