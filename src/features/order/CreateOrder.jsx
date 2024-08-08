@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { Form, redirect, useActionData, useNavigation } from "react-router-dom";
-import { createOrder } from "../../services/apiRestaurant";
+// import { useState } from 'react';
+// redirect
+import { Form, useActionData, useNavigation } from "react-router-dom";
+// import { createOrder } from '../../services/apiRestaurant';
 import Button from "../../ui/Button";
+import { useSelector } from "react-redux";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
   /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/.test(
-    str,
+    str
   );
 
 const fakeCart = [
@@ -34,42 +36,29 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
-  // const [withPriority, setWithPriority] = useState(false);
-  const cart = fakeCart;
-
-  // this is just for feedback for user to disable button
+  const user = useSelector((store) => store.user);
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  // check for errors (getting access to the object returned by action function in case of errors)
   const formErrors = useActionData();
 
-  // first you need to use <Form /> component from React Router (not standard <form />)
-  // then you need to specify the method: POST, PATCH, DELETE (not GET)
-  // then you need to specify the action which is the path where the form should be submitted to
-  // if not action is specified the default will be used (React Router will simply match the closest route)
-  // example: <Form method="POST" action="/order/new">
-  // then you need to create an action (function under component)
-  // when <Form /> is submitted a request will be created and intersepted by action function (indeed should be connecte to React Router)
-  // this technique doesn't need any submit form function, loading state or controlled elements
-  // React Router does everything behind the scene
+  // const [withPriority, setWithPriority] = useState(false);
+  const cart = fakeCart;
 
-  // to manage errors just before create a POST request check if everything is ok
-  // if not just return an object which will be intersepted by React Router
-  // then you can read this data inside the component with 'useActionData' hook
-  // to create some UI output for user
   return (
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">
         Ready to order? Let&apos;s go!
       </h2>
 
-      <Form method="POST" action="/order/new">
+      {/* <Form method="POST" action="/order/new"> */}
+      <Form method="POST">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">First Name</label>
           <input
-            className="input w-full"
+            className="input grow"
             type="text"
+            defaultValue={user.username}
             name="customer"
             required
           />
@@ -79,7 +68,6 @@ function CreateOrder() {
           <label className="sm:basis-40">Phone number</label>
           <div className="grow">
             <input className="input w-full" type="tel" name="phone" required />
-            {/* check if there is any error from useActionData */}
             {formErrors?.phone && (
               <p className="mt-2 rounded-md bg-red-100 p-2 text-xs text-red-700">
                 {formErrors.phone}
@@ -102,26 +90,22 @@ function CreateOrder() {
 
         <div className="mb-12 flex items-center gap-5">
           <input
+            className="h-6 w-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
             type="checkbox"
             name="priority"
             id="priority"
-            className="h-6 w-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
             // value={withPriority}
             // onChange={(e) => setWithPriority(e.target.checked)}
           />
-          <label className="font-medium" htmlFor="priority">
+          <label htmlFor="priority" className="font-medium">
             Want to yo give your order priority?
           </label>
         </div>
 
         <div>
-          {/* to add more data to the form (which is outside the form) like cart data */}
-          {/* you can use a hidden input field */}
-          {/* just if you want to pas an object to need to transform to string it */}
-          {/* this way then form will be submitted this data will be also shows in the data but used doesn't see it */}
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button type="primary" disabled={isSubmitting}>
-            {isSubmitting ? "submitting..." : "Order now"}
+          <Button disabled={isSubmitting} type="primary">
+            {isSubmitting ? "Placing order...." : "Order now"}
           </Button>
         </div>
       </Form>
@@ -129,51 +113,30 @@ function CreateOrder() {
   );
 }
 
-// by convention it's called 'action'
-// so when the <Form /> is submitted the request will be passed into this function
-//
 export async function action({ request }) {
-  // formData() is regular browser API which returns formData object
   const formData = await request.formData();
-
-  // then for a better usuability transform no normal object
   const data = Object.fromEntries(formData);
 
-  // creating a nice object to work with
   const order = {
     ...data,
     cart: JSON.parse(data.cart),
-    // this indeed returns a boolean
     priority: data.priority === "on",
   };
 
-  // checking for errors
-  // creating errors object
   const errors = {};
-
-  // checking only phone number just for example
   if (!isValidPhone(order.phone))
-    errors.phone = "Please enter a correct phone number";
+    errors.phone =
+      "Please give us your correct phone number. We might need it to contact you.";
 
-  // check if there is at least one error
-  // if it's return object of errors instead of doing a POST request
   if (Object.keys(errors).length > 0) return errors;
 
-  // createOrder() is an imported function which contains the logic of API POST request
-  // this function returns a newly created object (from API)
-  // inside the component you can get access to the data returned from this action function
-  // in this case it's object of errors
-  // this data can be read with useLoaderData hook and create some UI output for user
+  // If everything is okay, create new order and redirect
 
-  const newOrder = await createOrder(order);
+  // const newOrder = await createOrder(order);
 
-  // now you can redirect user to new order Route
-  // but you can't use 'useNavigate' since it's outside a component
-  // so you can use 'redirect'
-  // 'redirect' function will create a new response and it works with web API
-  // so if you return a new response from this function the browser will follow that response
+  // return redirect(`/order/${newOrder.id}`);
 
-  return redirect(`/order/${newOrder.id}`);
+  return null;
 }
 
 export default CreateOrder;
